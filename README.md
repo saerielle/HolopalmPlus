@@ -1,7 +1,20 @@
 # Holopalm Plus
-Source code for the Holopalm Plus mod for the game I Was a Teenage Exocolonist
+Holopalm Plus mod for the game I Was a Teenage Exocolonist
 
 UI enhancement mod: character story notifications, job previews, enhanced choice tooltips, character info and gift preference tracking.
+
+## Screenshots
+<img width="255" height="143" alt="Choice-preview1" src="https://github.com/user-attachments/assets/501fffab-7a78-4981-9ede-f2796d5021bd" />
+<img width="255" height="143" alt="Choice-preview2" src="https://github.com/user-attachments/assets/11e8652f-8fbe-4547-894d-0bf8437ee46a" />
+<img width="255" height="143" alt="Gifting" src="https://github.com/user-attachments/assets/185f65c3-999c-4b18-88b4-61fcc430da6a" />
+<img width="255" height="143" alt="Gifting2" src="https://github.com/user-attachments/assets/c7ef8e40-e476-45c2-b283-d4a8e9de7e7b" />
+<img width="255" height="143" alt="Jobs1" src="https://github.com/user-attachments/assets/59c0d935-34c6-4a08-884a-46898583e8b3" />
+<img width="255" height="143" alt="Jobs2" src="https://github.com/user-attachments/assets/6d5e40ec-51d9-489d-89d1-e7697f7b5657" />
+<img width="255" height="143" alt="Notifications1" src="https://github.com/user-attachments/assets/cf9acfda-7944-49b4-9916-67358ef8d0d9" />
+<img width="255" height="143" alt="Notifications2" src="https://github.com/user-attachments/assets/2cfc7413-8c6d-4ff1-8a72-77b707af4283" />
+<img width="255" height="143" alt="Bio1" src="https://github.com/user-attachments/assets/ae4dcc45-e579-46fa-a0e1-8d14fb33fd9a" />
+<img width="255" height="143" alt="Bio2" src="https://github.com/user-attachments/assets/e8638246-af75-4bed-8438-43e6e11e9991" />
+<img width="255" height="143" alt="Settings" src="https://github.com/user-attachments/assets/358830f7-aa52-4846-b5a9-a9b765aa6388" />
 
 ## Notification Overlay
 Displays notifications for new character stories and birthdays, with up to 5 notifications shown at a time. No more running around the colony looking for speech bubbles - see at a glance who has new stories available, including friends, parents, and even Sym on expeditions. Also alerts you to special interactions like dates, skill-based conversations, Rex's hugs and bar building, character birthdays, as well as some colony events. Notification overlay is only shown starting from the 2nd in game month and if there are actual notifications to show at any given time.
@@ -60,4 +73,4 @@ Gift indicators added by this mod:
 Note: Neutral gift tracking only begins after installing this mod - it can't retroactively know about neutral gifts from before installation because base game only tracks if you have discovered likes and dislikes of a character.
 
 # Download
-Nexus mods page https://www.nexusmods.com/iwasateenageexocolonist/mods/10
+https://github.com/saerielle/HolopalmPlus/releases

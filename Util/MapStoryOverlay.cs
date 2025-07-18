@@ -21,7 +21,6 @@ namespace HolopalmPlus
         private GameObject overlayPanel;
         private Transform itemContainer => overlayPanel?.transform.Find("ItemContainer");
         private GameObject itemPrefab;
-        // private GameObject moreIndicator;
 
         private GameObject filterPanel;
         private GameObject filterToggleButton;
@@ -33,7 +32,6 @@ namespace HolopalmPlus
         private readonly Dictionary<string, GameObject> itemGameObjects = [];
         private readonly Dictionary<string, Sprite> cachedPortraits = [];
 
-        // Available types
         private readonly string[] availableTypes =
         [
             "charaStory",
@@ -44,7 +42,6 @@ namespace HolopalmPlus
             "ignoredItems"
         ];
 
-        // Constants
         private const int MAX_VISIBLE_ITEMS = 5;
         private const float ITEM_HEIGHT = 40f;
         private const float ITEM_SPACING = 5f;
@@ -108,7 +105,6 @@ namespace HolopalmPlus
             vlg.childAlignment = TextAnchor.UpperLeft;
 
             CreateItemPrefab();
-            // CreateMoreIndicator();
             CreateFilterPanel();
 
             overlayPanel.SetActive(false);
@@ -411,17 +407,6 @@ namespace HolopalmPlus
             RectTransform descRect = descHolder.AddComponent<RectTransform>();
             descRect.sizeDelta = new Vector2(200, 30);
 
-            // TextMeshProUGUI descText = descHolder.AddComponent<TextMeshProUGUI>();
-            // descText.text = "";
-            // descText.fontSize = 14;
-            // descText.color = Color.white;
-            // descText.raycastTarget = true;
-            // descText.alignment = TextAlignmentOptions.MidlineLeft;
-
-            // LayoutElement descLayout = descHolder.AddComponent<LayoutElement>();
-            // descLayout.flexibleWidth = 1;
-            // descLayout.minHeight = 30;
-            // descLayout.preferredHeight = 30;
             ContentSizeFitter itemSizeFitter = itemPrefab.AddComponent<ContentSizeFitter>();
             itemSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -431,13 +416,12 @@ namespace HolopalmPlus
             descText.color = Color.white;
             descText.raycastTarget = true;
             descText.alignment = TextAlignmentOptions.MidlineLeft;
-            descText.enableWordWrapping = true; // Add this line
+            descText.enableWordWrapping = true;
 
             LayoutElement descLayout = descHolder.AddComponent<LayoutElement>();
             descLayout.flexibleWidth = 1;
             descLayout.minHeight = 30;
-            descLayout.flexibleHeight = 1; // Add this line
-            // Remove preferredHeight to allow flexible sizing
+            descLayout.flexibleHeight = 1;
 
             GameObject xButton = new GameObject("CloseButton");
             xButton.transform.SetParent(itemPrefab.transform, false);
@@ -474,31 +458,8 @@ namespace HolopalmPlus
             xTextRect.offsetMax = Vector2.zero;
         }
 
-        // private void CreateMoreIndicator()
-        // {
-        //     moreIndicator = new GameObject("MoreIndicator");
-        //     moreIndicator.transform.SetParent(overlayPanel.transform, false);
-        //     moreIndicator.SetActive(false);
-
-        //     RectTransform moreRect = moreIndicator.AddComponent<RectTransform>();
-        //     moreRect.anchorMin = new Vector2(0.5f, 0);
-        //     moreRect.anchorMax = new Vector2(0.5f, 0);
-        //     moreRect.pivot = new Vector2(0.5f, 0);
-        //     moreRect.anchoredPosition = new Vector2(0, 10);
-        //     moreRect.sizeDelta = new Vector2(50, 20);
-
-        //     TextMeshProUGUI moreText = moreIndicator.AddComponent<TextMeshProUGUI>();
-        //     moreText.text = "...";
-        //     moreText.fontSize = 16;
-        //     moreText.alignment = TextAlignmentOptions.Center;
-        //     moreText.color = Color.white;
-        //     moreText.raycastTarget = true;
-        // }
-
         public void UpdateStoryItems(StoryItem[] items)
         {
-            // items = items.Where(item => !ignoredIds.Contains(item.id)).ToArray();
-
             ClearItems();
 
             storyItems = [.. items];
@@ -508,7 +469,6 @@ namespace HolopalmPlus
 
         public void RemoveItem(string id, bool ignore = false)
         {
-            // storyItems.RemoveAll(item => item.id == id);
             if (ignore)
             {
                 ignoredIds.Add(id);
@@ -555,7 +515,6 @@ namespace HolopalmPlus
 
             if (filteredItems.Count == 0)
             {
-                // moreIndicator.SetActive(false);
                 return;
             }
 
@@ -564,8 +523,6 @@ namespace HolopalmPlus
             {
                 CreateItemGameObject(filteredItems[i]);
             }
-
-            // moreIndicator.SetActive(filteredItems.Count > MAX_VISIBLE_ITEMS);
         }
 
         private void CreateItemGameObject(StoryItem item)

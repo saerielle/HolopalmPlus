@@ -25,6 +25,7 @@ Visual indicators on job selection screen show what might happen:
 - ★ - Job will trigger an event-type story
 - ★ - Job will trigger an "ultimate" event story (usually unlocks new cards and boosts job rewards)
 - ☆ - Job will unlock another job
+
 Updated tooltip now shows how many times you've done a specific job or expedition this playthrough.
 
 ## Expedition Job Preview
@@ -51,6 +52,7 @@ Shows detailed information about previously seen choices (requires "Highlight se
 - Skill icon - Skill changes only
 - ? - Multiple different effects or special memory flag changes (like helping Tangent, Tammy's confidence, etc.)
 - ↑ - Choice provides more information/lore without advancing story
+
 Detailed tooltips - shows specific friendship gains/losses, skill changes, and special memory flag effects. When a choice leads to only one follow-up option, the tooltip recursively combines all effects from the entire chain, giving you the complete outcome preview since there are no branching decisions ahead.
 
 ## Extended Character Bio
@@ -70,6 +72,7 @@ Gift indicators added by this mod:
 - 👎Thumbs down for dislikes
 -  ? Question mark for unknown preferences
 - No icon for neutral items
+
 Note: Neutral gift tracking only begins after installing this mod - it can't retroactively know about neutral gifts from before installation because base game only tracks if you have discovered likes and dislikes of a character.
 
 # Download

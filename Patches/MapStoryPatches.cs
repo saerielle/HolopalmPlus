@@ -2,6 +2,7 @@ using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
 using Northway.Utils;
+using UnityEngine.NVIDIA;
 
 namespace HolopalmPlus
 {
@@ -200,7 +201,9 @@ namespace HolopalmPlus
                     });
                 }
 
-                if (MapManager.IsColonyScene(MapManager.currentScene) && Princess.monthOfYear != 13)
+                bool isColonyScene = MapManager.IsColonyScene(MapManager.currentScene);
+
+                if (isColonyScene && Princess.monthOfYear != 13)
                 {
                     Chara sym = Chara.FromID("sym");
                     if (sym != null && sym.hasMet)
@@ -219,12 +222,21 @@ namespace HolopalmPlus
                             });
                         }
                     }
+                }
 
-                    // MapStoryOverlay.StoryItem socksStory = CheckSocksStory();
-                    // if (socksStory != null)
-                    // {
-                    //     items.Add(socksStory);
-                    // }
+                if (isColonyScene)
+                {
+                    MapStoryOverlay.StoryItem socksStory = CheckSocksStory();
+                    if (socksStory != null)
+                    {
+                        items.Add(socksStory);
+                    }
+
+                    List<MapStoryOverlay.StoryItem> unlockStories = CheckUnlockStories();
+                    if (unlockStories.Count > 0)
+                    {
+                        items.AddRange(unlockStories);
+                    }
                 }
 
                 overlayInstance.UpdateStoryItems([.. items]);
@@ -236,6 +248,17 @@ namespace HolopalmPlus
             {
                 ModInstance.Log($"Error in SetStories: {ex.Message}");
             }
+        }
+
+        private static Story GetJobStory(Job job)
+        {
+            if (job == null)
+            {
+                return null;
+            }
+
+            Result result = new Result(job);
+            return Story.PickBeforeJobStory(result);
         }
 
         private static MapStoryOverlay.StoryItem CheckSocksStory()
@@ -250,13 +273,7 @@ namespace HolopalmPlus
 
             foreach (Job job in jobs)
             {
-                if (job == null)
-                {
-                    continue;
-                }
-
-                Result result = new Result(job);
-                Story story = Story.PickBeforeJobStory(result);
+                Story story = GetJobStory(job);
                 if (story != null && story.storyID != null && socksStoryIDs.Contains(story.storyID))
                 {
                     return new MapStoryOverlay.StoryItem
@@ -270,6 +287,269 @@ namespace HolopalmPlus
             }
 
             return null;
+        }
+
+        private static List<MapStoryOverlay.StoryItem> CheckUnlockStories()
+        {
+            List<MapStoryOverlay.StoryItem> unlockStories = new List<MapStoryOverlay.StoryItem>();
+
+            foreach (Location location in Location.allLocations)
+            {
+                if (location == null)
+                {
+                    continue;
+                }
+
+                List<Job> jobs = Job.FromLocation(location);
+
+                foreach (Job job in jobs)
+                {
+                    if (job == null || !job.isUnlocked)
+                    {
+                        continue;
+                    }
+
+                    Story story = GetJobStory(job);
+                    if (story?.storyID?.ToLower().EndsWith("unlock") == true)
+                    {
+                        unlockStories.Add(new MapStoryOverlay.StoryItem
+                        {
+                            id = $"unlock_{story.storyID}",
+                            type = "custom",
+                            icon = "★",
+                            description = $"Job unlock available in {location.locationName}"
+                        });
+                        break;
+                    }
+                }
+
+                Story locationStory = Story.FromID(location.locationID);
+
+                if (locationStory == null || locationStory.entryChoice == null || locationStory.entryChoice.choices == null || locationStory.entryChoice.choices.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (Choice choice in locationStory.entryChoice.choices)
+                {
+                    if (choice.CanShow(Princess.result, true) && choice.CanExecuteShown(Princess.result, true))
+                    {
+                        switch (choice.buttonText)
+                        {
+                            case "Make the payload for Rhett":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"rhett_payload_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Make the payload for Rhett in {location.locationName}"
+                                });
+                                break;
+                            case "Download Data for Sym":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"sym_data_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Download data for Sym in {location.locationName}"
+                                });
+                                break;
+                            case "Tinker with your DNA":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"dna_tinker_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Tinker with your DNA in {location.locationName}"
+                                });
+                                break;
+                            case "Register for engineering classes":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_engineeringPhysicsUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Register for engineering classes in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to be a tutor":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_engineeringTutoringUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to be a tutor in {location.locationName}"
+                                });
+                                break;
+                            case "Apply at the robotics lab":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_engineeringRobotUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply at the robotics lab in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to assist the doctor":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_engineeringNurseUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to assist the doctor in {location.locationName}"
+                                });
+                                break;
+                            case "Put a stop to Tangent's secret project":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"tangent_project_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Put a stop to Tangent's secret project in {location.locationName}"
+                                });
+                                break;
+                            case "Bring the Overseer's Deal to Governor Lum":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"overseer_deal_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Bring the Overseer's Deal to Governor Lum in {location.locationName}"
+                                });
+                                break;
+                            case "Bring the Overseer's Deal to Marz":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"overseer_deal_marz_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Bring the Overseer's Deal to Marz in {location.locationName}"
+                                });
+                                break;
+                            case "Bring the Overseer's Deal to the Council":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"overseer_deal_council_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Bring the Overseer's Deal to the Council in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to deliver supplies":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_commandDeliveryUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to deliver supplies in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to be Lum's assistant":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_commandAssistantUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to be Lum's assistant in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to work in construction":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_commandConstructionUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to work in construction in {location.locationName}"
+                                });
+                                break;
+                            case "\"I'm tough enough!\"":
+                            case "\"I'm brave enough!\"":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_expeditionsSneakOutUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Unlock sneaking out in {location.locationName}"
+                                });
+                                break;
+                            case "Check in with Chief Rhett":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"rhett_checkin_{location.locationID}",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Check in with Chief Rhett in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to be a forager":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_expeditionsForagerUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to be a forager in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to be a hunter":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_expeditionsHunterUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to be a hunter in {location.locationName}"
+                                });
+                                break;
+                            case "Apply for Lookout Duty":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_garrisonLookoutDutyUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply for Lookout Duty in {location.locationName}"
+                                });
+                                break;
+                            case "Apply for Guard Duty":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_garrisonGuardDutyUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply for Guard Duty in {location.locationName}"
+                                });
+                                break;
+                            case "Explore the Xenobotany lab":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_geoponicsAnalyzePlantsUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Explore the Xenobotany lab in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to work as a farmer":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_geoponicsFarmingUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to work as a farmer in {location.locationName}"
+                                });
+                                break;
+                            case "Apply to work in the kitchen":
+                                unlockStories.Add(new MapStoryOverlay.StoryItem
+                                {
+                                    id = $"unlock_quartersCookingUnlock",
+                                    type = "custom",
+                                    icon = "★",
+                                    description = $"Apply to work in the kitchen in {location.locationName}"
+                                });
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return unlockStories;
         }
 
         private static bool ShouldShowStory(Story story)
@@ -415,17 +695,6 @@ namespace HolopalmPlus
 
                 if (charaSpot.story != null)
                 {
-                    // if (!chara.hasMet && chara.charaID != "sym")
-                    // {
-                    //     return new MapStoryOverlay.StoryItem
-                    //     {
-                    //         id = $"meet_{chara.charaID}",
-                    //         type = "charaStory",
-                    //         charaID = chara.charaID,
-                    //         description = $"{GetCharaName(chara)} is waiting to be met"
-                    //     };
-                    // }
-
                     if (ShouldShowStory(charaSpot.story))
                     {
                         if (exocomfortsSkillStoryIds.Contains(charaSpot.story.storyID.ToLowerInvariant()))
@@ -582,11 +851,6 @@ namespace HolopalmPlus
             overlayInstance?.ClearIgnoredItems();
         }
 
-        // public static void RemoveStoryItem(string itemId)
-        // {
-        //     overlayInstance?.RemoveItem(itemId);
-        // }
-
         public static MapStoryOverlay GetOverlayInstance()
         {
             return overlayInstance;
@@ -633,28 +897,12 @@ namespace HolopalmPlus
                 return;
             }
 
-            // if (Singleton<ResultsMenu>.isOpen)
-            // {
-            //     ModInstance.Log("[MapStoryPatches] ResultsMenu is active, skipping story update");
-            //     return;
-            // }
-
             if (__instance != null && (__instance.mapSpot?.type == MapSpotType.collectible || __instance.mapSpotType == MapSpotType.collectible))
             {
                 return;
             }
 
             SetStories();
-
-            // if (__instance == null || __instance.story == null)
-            // {
-            //     return;
-            // }
-
-            // if (__instance.mapSpot != null && __instance.mapSpot.type == MapSpotType.chara)
-            // {
-            //     SetStories();
-            // }
         }
 
         [HarmonyPatch(typeof(ResultsMenu), nameof(ResultsMenu.ShowResult))]
@@ -663,14 +911,6 @@ namespace HolopalmPlus
         {
             overlayInstance?.SetOverlayActive(false);
         }
-
-        // [HarmonyPatch(typeof(MenuManager), nameof(MenuManager.ShowMenu))]
-        // [HarmonyPrefix]
-        // public static bool MenuManagerShowMenuPrefix(MenuType type, bool force = false, bool immediate = false)
-        // {
-        //     overlayInstance?.SetOverlayActive(false);
-        //     return true;
-        // }
 
         [HarmonyPatch(typeof(BattleMenu), nameof(BattleMenu.StartBattle))]
         [HarmonyPrefix]
@@ -686,55 +926,5 @@ namespace HolopalmPlus
         {
             overlayInstance?.SetOverlayActive(false);
         }
-
-        // [HarmonyPatch(typeof(BattleMenu), nameof(BattleMenu.WinBattle))]
-        // [HarmonyPostfix]
-        // public static void BattleMenuWinBattlePostfix()
-        // {
-        //     overlayInstance?.SetOverlayActive(false);
-        // }
-
-        // [HarmonyPatch(typeof(BattleMenu), nameof(BattleMenu.LoseBattle))]
-        // [HarmonyPostfix]
-        // public static void BattleMenuLoseBattlePostfix()
-        // {
-        //     overlayInstance?.SetOverlayActive(false);
-        // }
-
-        // [HarmonyPatch(typeof(ResultsMenu), "OnOpen")]
-        // [HarmonyPostfix]
-        // public static void ResultsMenuOnOpenPostfix(ResultsMenu __instance)
-        // {
-        //     if (__instance == null || overlayInstance == null)
-        //     {
-        //         return;
-        //     }
-
-        //     overlayInstance.SetOverlayActive(false);
-        // }
-
-        // [HarmonyPatch(typeof(ResultsMenu), "DoneClicked")]
-        // [HarmonyPostfix]
-        // public static void ResultsMenuDoneClickedPostfix(ResultsMenu __instance)
-        // {
-        //     if (__instance == null || overlayInstance == null)
-        //     {
-        //         return;
-        //     }
-
-        //     SetStories();
-        // }
-
-        // [HarmonyPatch(typeof(ResultsMenu), "OnStartClose")]
-        // [HarmonyPostfix]
-        // public static void ResultsMenuOnStartClosePostfix(ResultsMenu __instance)
-        // {
-        //     if (__instance == null || overlayInstance == null)
-        //     {
-        //         return;
-        //     }
-
-        //     SetStories();
-        // }
     }
 }

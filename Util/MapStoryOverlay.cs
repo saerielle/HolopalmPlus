@@ -638,17 +638,25 @@ namespace HolopalmPlus
 
         private Sprite AssetManagerLoadWrapper(string portraitName)
         {
-            if (cachedPortraits.ContainsKey(portraitName) && cachedPortraits[portraitName] != null)
+            try
             {
-                return cachedPortraits[portraitName];
-            }
+                if (cachedPortraits.ContainsKey(portraitName) && cachedPortraits[portraitName] != null)
+                {
+                    return cachedPortraits[portraitName];
+                }
 
-            Sprite originalSprite = AssetManager.LoadCharaPortrait(portraitName);
-            if (originalSprite != null)
+                Sprite originalSprite = AssetManager.LoadCharaPortrait(portraitName);
+                if (originalSprite != null)
+                {
+                    Sprite copiedSprite = CreateSpriteCopy(originalSprite);
+                    cachedPortraits[portraitName] = copiedSprite;
+                    return copiedSprite;
+                }
+            }
+            catch (Exception e)
             {
-                Sprite copiedSprite = CreateSpriteCopy(originalSprite);
-                cachedPortraits[portraitName] = copiedSprite;
-                return copiedSprite;
+                ModInstance.Log($"[MapStoryOverlay] Error loading portrait '{portraitName}': {e.Message}");
+                ModInstance.Log($"[MapStoryOverlay] Stack Trace: {e.StackTrace}");
             }
 
             return null;

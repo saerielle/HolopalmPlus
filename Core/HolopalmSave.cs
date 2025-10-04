@@ -1,19 +1,26 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Linq;
 using UnityEngine;
 
 namespace HolopalmPlus
 {
+    [Serializable]
     public class HolopalmSave
     {
         private static HolopalmSave _instance;
         private static bool isLoaded;
-        private const int currentVersion = 1;
+        private const int currentVersion = 2;
         public const string filename = "HolopalmSave.json";
         public const string filenameBackup = "HolopalmSave.bak";
-        public int saveFileVersion = 1;
+        public int saveFileVersion = 2;
 
+        // Serializable string fields for JsonUtility (v2 save file format)
+        public string settingsSerialized = "";
+        public string overlayFiltersSerialized = "";
+        public string giftedCardsSerialized = "";
+
+        // Runtime dictionaries (not serialized by JsonUtility)
         public Dictionary<string, bool> settings = new()
         {
             { "showMapStoryOverlay", true },
@@ -144,7 +151,7 @@ namespace HolopalmPlus
             }
             catch (Exception ex)
             {
-                ModInstance.Log("HolopalmSave.Load error during FromJsonOverwrite: " + ex);
+                ModInstance.Log("HolopalmSave.Load error during loading: " + ex);
                 isLoaded = true;
                 Save();
             }
@@ -171,7 +178,17 @@ namespace HolopalmPlus
 
             try
             {
-                JsonConvert.PopulateObject(text, this);
+                int detectedVersion = DetectSaveVersion(text);
+
+                if (detectedVersion == 1)
+                {
+                    LoadVersion1(text);
+                }
+                else
+                {
+                    JsonUtility.FromJsonOverwrite(text, this);
+                    DeserializeDictionaries();
+                }
             }
             catch (Exception ex)
             {
@@ -195,7 +212,17 @@ namespace HolopalmPlus
 
                 try
                 {
-                    JsonConvert.PopulateObject(text, this);
+                    int detectedVersion = DetectSaveVersion(text);
+
+                    if (detectedVersion == 1)
+                    {
+                        LoadVersion1(text);
+                    }
+                    else
+                    {
+                        JsonUtility.FromJsonOverwrite(text, this);
+                        DeserializeDictionaries();
+                    }
                 }
                 catch (Exception ex2)
                 {
@@ -219,9 +246,120 @@ namespace HolopalmPlus
             }
         }
 
+        private int DetectSaveVersion(string json)
+        {
+            if (json.Contains("\"settingsSerialized\""))
+            {
+                return 2;
+            }
+            return 1;
+        }
+
+        private void LoadVersion1(string json)
+        {
+            ModInstance.Log("Detected version 1 save file, attempting migration...");
+
+            Type newtonsoftJsonType = Type.GetType("Newtonsoft.Json.JsonConvert, Newtonsoft.Json");
+            if (newtonsoftJsonType != null)
+            {
+                try
+                {
+                    var populateMethod = newtonsoftJsonType.GetMethod("PopulateObject", new[] { typeof(string), typeof(object) });
+                    if (populateMethod != null)
+                    {
+                        populateMethod.Invoke(null, [json, this]);
+                        ModInstance.Log("Successfully migrated from version 1 using Newtonsoft.Json");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModInstance.Log("Failed to use Newtonsoft.Json for migration: " + ex.Message);
+                }
+            }
+        }
+
+        private void DeserializeDictionaries()
+        {
+            if (settings == null || settings.Count == 0)
+            {
+                settings = new Dictionary<string, bool>
+                {
+                    { "showMapStoryOverlay", true },
+                    { "showJobPreview", true },
+                    { "frequentStories", true },
+                    { "glowJobStories", true },
+                    { "showSeenText", true },
+                    { "extendedOutcomePreview", true },
+                    { "extendedCharaBio", true },
+                    { "giftInfo", true }
+                };
+            }
+
+            if (overlayFilters == null || overlayFilters.Count == 0)
+            {
+                overlayFilters = new Dictionary<string, bool>
+                {
+                    { "charaStory", true },
+                    { "charaInteraction", true },
+                    { "charaBirthday", true },
+                    { "custom", true },
+                    { "ignoredItems", false }
+                };
+            }
+
+            if (giftedCards == null)
+            {
+                giftedCards = new Dictionary<string, List<string>>();
+            }
+
+            if (!string.IsNullOrEmpty(settingsSerialized))
+            {
+                foreach (var pair in settingsSerialized.Split(';'))
+                {
+                    if (string.IsNullOrEmpty(pair)) continue;
+                    var parts = pair.Split(':');
+                    if (parts.Length == 2 && bool.TryParse(parts[1], out bool value))
+                    {
+                        settings[parts[0]] = value;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(overlayFiltersSerialized))
+            {
+                foreach (var pair in overlayFiltersSerialized.Split(';'))
+                {
+                    if (string.IsNullOrEmpty(pair)) continue;
+                    var parts = pair.Split(':');
+                    if (parts.Length == 2 && bool.TryParse(parts[1], out bool value))
+                    {
+                        overlayFilters[parts[0]] = value;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(giftedCardsSerialized))
+            {
+                foreach (var pair in giftedCardsSerialized.Split(';'))
+                {
+                    if (string.IsNullOrEmpty(pair)) continue;
+                    var parts = pair.Split(new[] { ':' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        var items = parts[1].Split(',')
+                            .Where(s => !string.IsNullOrEmpty(s))
+                            .ToList();
+                        giftedCards[parts[0]] = items;
+                    }
+                }
+            }
+        }
+
         private void SaveThread(string path)
         {
-            FileManager.SaveFile(JsonConvert.SerializeObject(this), filename, path);
+            string json = JsonUtility.ToJson(this, prettyPrint: true);
+            FileManager.SaveFile(json, filename, path);
         }
 
         public static void Save(bool threaded = true)
@@ -265,11 +403,15 @@ namespace HolopalmPlus
             save.settings = new Dictionary<string, bool>(settings);
             save.overlayFilters = new Dictionary<string, bool>(overlayFilters);
 
-            save.giftedCards = [];
+            save.giftedCards = new Dictionary<string, List<string>>();
             foreach (var kvp in giftedCards)
             {
-                save.giftedCards[kvp.Key] = [.. kvp.Value];
+                save.giftedCards[kvp.Key] = new List<string>(kvp.Value);
             }
+
+            save.settingsSerialized = string.Join(";", settings.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            save.overlayFiltersSerialized = string.Join(";", overlayFilters.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            save.giftedCardsSerialized = string.Join(";", giftedCards.Select(kvp => $"{kvp.Key}:{string.Join(",", kvp.Value)}"));
 
             return save;
         }

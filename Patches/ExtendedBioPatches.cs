@@ -133,6 +133,45 @@ public class ExtendedBioPatches
         }
     }
 
+    // Patch to still enable having Marz and Rex as secret admirers, even if they are dating each other
+    [HarmonyPatch(typeof(Chara), "isDatingSomeone", MethodType.Getter)]
+    [HarmonyPostfix]
+    public static void CharaIsDatingSomeonePostfix(Chara __instance, ref bool __result)
+    {
+        try
+        {
+            if (!HolopalmSave.GetSetting("extendedCharaBio", true))
+            {
+                return;
+            }
+
+            if (__instance == null)
+            {
+                return;
+            }
+
+            if (__instance.charaID == "marz" || __instance.charaID == "rex")
+            {
+                if (Princess.HasMemory("marzRexDate"))
+                {
+                    __result = false;
+                }
+            }
+
+            if (__instance.charaID == "dys" || __instance.charaID == "sym")
+            {
+                if (Princess.HasMemory("dysSymDate"))
+                {
+                    __result = false;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            ModInstance.Log($"Error in ExtendedBioPatches.CharaIsDatingSomeonePostfix: {e.Message}");
+        }
+    }
+
     [HarmonyPatch(typeof(Chara), "GetFact", [typeof(CharaFact), typeof(bool)])]
     [HarmonyPostfix]
     public static void CharaGetFactPostfix(Chara __instance, ref string __result, CharaFact fact, bool force)
